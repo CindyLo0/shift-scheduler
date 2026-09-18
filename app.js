@@ -192,7 +192,10 @@ function overlapsUnavailable(start, ranges) {
   for (const r of ranges) {
     for (let h = 0; h < SHIFT_LEN; h++) {
       const hour = (start + h) % 24;
-      if (hour >= r.start && hour < r.end) return true;
+      const hit = r.start <= r.end
+        ? (hour >= r.start && hour < r.end)
+        : (hour >= r.start || hour < r.end);
+      if (hit) return true;
     }
   }
   return false;
