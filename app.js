@@ -229,11 +229,13 @@ let under = 0, over = 0;
   for (let i = 0; i < people.length; i++) {
     const p = people[i];
     const shifts = personShifts[i].slice().sort((a, b) => a.day - b.day);
-for (let k = 1; k < shifts.length; k++) {
-      if (shifts[k].day - shifts[k - 1].day === 1) {
-        // rest = 15 + start_next - start_prev; violation if < REST_MIN
-        if (shifts[k].start < shifts[k - 1].start - (24 - SHIFT_LEN - REST_MIN)) { restViol++; hardPenalty += HARD_PENALTY; }
-      }
+    for (let k = 0; k < shifts.length; k++) {
+      const prev = shifts[k];
+      const next = shifts[(k + 1) % shifts.length];
+      if (shifts.length < 2) break;
+      const gap = (next.day - prev.day + 7) % 7;
+      if (gap !== 1) continue;
+      if (next.start < prev.start - (24 - SHIFT_LEN - REST_MIN)) { restViol++; hardPenalty += HARD_PENALTY; }
     }
     for (const sh of shifts) {
       if (p.unavailableDays.includes(sh.day)) { unavailViol++; hardPenalty += HARD_PENALTY; }
