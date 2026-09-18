@@ -166,7 +166,16 @@ function shiftSlots(day, start) {
   return slots;
 }
 
-function isOvernight(start) { return start >= 0 && start <= 4; }
+// A shift is overnight if any of its 9 covered hours falls in 00:00-04:59.
+// This catches late starts (e.g. 21:00, 22:00, 23:00) that run through the
+// small hours via the modulo-24 wrap, not just shifts that start at 00:00-04:00.
+function isOvernight(start) {
+  for (let h = 0; h < SHIFT_LEN; h++) {
+    const hour = (start + h) % 24;
+    if (hour >= 0 && hour < 5) return true;
+  }
+  return false;
+}
 function isWeekend(day) { return day === 5 || day === 6; }
 
 // True if any two off days are consecutive, treating the week as cyclic so
