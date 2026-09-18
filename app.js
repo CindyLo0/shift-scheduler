@@ -770,7 +770,7 @@ function renderRoster() {
   const coverage = state.lastResult ? state.lastResult.coverage : new Array(SLOTS).fill(0);
 
   // single CSS grid: 1 hour column + 7 day blocks (each "#" + 8 person cols)
-  const cols = ["70px"];
+  const cols = ["150px"];
   for (let d = 0; d < 7; d++) cols.push("30px", "repeat(8, 1fr)");
   el.style.gridTemplateColumns = cols.join(" ");
 
