@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shift Scheduler — 8-Person Support Team</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1>Shift Scheduler</h1>
+      <span class="badge tz">Timezone: Asia/Manila (UTC+8)</span>
+    </div>
+    <div class="topbar-actions">
+      <label class="toggle">
+        <input type="checkbox" id="variationToggle" />
+        <span>Allow per-day start variation</span>
+      </label>
+      <button id="solveBtn" class="btn primary">Solve</button>
+      <button id="exportBtn" class="btn">Export CSV</button>
+      <button id="resetBtn" class="btn danger">Reset to demo data</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel" id="feasibilityPanel">
+      <h2>Feasibility &amp; Validation</h2>
+      <div id="feasibilityMsg" class="feasibility-msg"></div>
+      <div id="validationList" class="validation-list"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Coverage Heatmap <span class="legend">
+        <span class="lg lg-2">2 on duty</span>
+        <span class="lg lg-3">3 (handover)</span>
+        <span class="lg lg-bad">0–1 (error)</span>
+      </span></h2>
+      <div class="heatmap-scroll">
+        <div id="heatmap" class="heatmap"></div>
+      </div>
+    </section>
+
+<section class="panel">
+      <h2>Roster Grid</h2>
+      <div class="roster-scroll">
+        <div id="roster" class="roster"></div>
+      </div>
+      <div id="rosterLegend" class="roster-legend"></div>
+      <div id="rosterNotes" class="roster-notes"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Settings — Soft-Constraint Weights</h2>
+      <div id="weightsPanel" class="weights-grid"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Team</h2>
+      <div id="peoplePanel" class="people-grid"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
