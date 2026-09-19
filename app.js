@@ -219,11 +219,14 @@ function evaluate(people, weights) {
   }
 
   // --- hard constraints ---
+  // Only the 2-person minimum is a hard requirement. `over` (>3 on duty) is
+  // tracked for information only - it is NOT penalised and does NOT count
+  // toward `hard` below, so it can never block a schedule from being feasible.
 let under = 0, over = 0;
   let hardPenalty = 0;
   for (let s = 0; s < SLOTS; s++) {
     if (coverage[s] < 2) { under++; hardPenalty += HARD_PENALTY * (2 - coverage[s]); }
-    if (coverage[s] > 3) { over++; hardPenalty += HARD_PENALTY * (coverage[s] - 3); }
+    if (coverage[s] > 3) { over++; }
   }
   let restViol = 0, unavailViol = 0;
   for (let i = 0; i < people.length; i++) {
@@ -242,7 +245,7 @@ let under = 0, over = 0;
       if (overlapsUnavailable(sh.start, p.unavailableHours)) { unavailViol++; hardPenalty += HARD_PENALTY; }
     }
   }
-  const hard = under + over + restViol + unavailViol;
+  const hard = under + restViol + unavailViol; // `over` deliberately excluded - see note above
 
   // --- soft constraints ---
   const personal = people.map((p, i) => personalPenalty(p, personShifts[i], weights));
@@ -262,8 +265,13 @@ let under = 0, over = 0;
     }
   }
 
-  // Handover preference: triple-coverage should sit at shift changeovers
-  // (where a shift starts or ends) rather than scattered mid-shift.
+  // Handover preference: extra coverage (anything above the 2-person minimum)
+  // should sit at shift changeovers (where a shift starts or ends) rather than
+  // scattered mid-shift. Uses ">2", not "===3", so this still applies now that
+  // coverage has no upper cap - without this, a slot with 4+ people away from
+  // a changeover paid zero penalty while a plain coverage-3 slot did, which
+  // perversely rewarded clustering surplus people into one big overlap instead
+  // of spreading it as small handover overlaps.
   const changeovers = new Set();
   for (const sh of personShifts.flat()) {
     changeovers.add((sh.day * 24 + sh.start) % SLOTS);
@@ -271,7 +279,7 @@ let under = 0, over = 0;
   }
   let handoverPenalty = 0;
   for (let s = 0; s < SLOTS; s++) {
-    if (coverage[s] === 3 && !changeovers.has(s)) handoverPenalty += weights.handover;
+    if (coverage[s] > 2 && !changeovers.has(s)) handoverPenalty += weights.handover;
   }
 
   const soft = sumPersonal + fairnessOvernight + fairnessWeekend + rotationPenalty + handoverPenalty + worst * weights.worstIndividual;
@@ -602,7 +610,6 @@ function feasibilityCheck() {
 function blockingReport(result) {
   const parts = [];
   if (result.under > 0) parts.push(`coverage gaps in ${result.under} slot(s) — add staff or lower the 2-person minimum`);
-  if (result.over > 0) parts.push(`overstaffing (>3) in ${result.over} slot(s) — reduce staff or raise the cap`);
   if (result.restViol > 0) parts.push(`${result.restViol} rest-period violation(s) — allow shorter rest or fewer consecutive days`);
   if (result.unavailViol > 0) parts.push(`${result.unavailViol} assignment(s) to unavailable time — relax unavailability`);
   return parts.length ? parts : ["no specific hard constraint is blocking — the search may need more time"];
@@ -645,7 +652,7 @@ function renderValidation() {
     const f = feasibilityCheck();
     items.push({ ok: f.ok, text: `Feasibility: ${f.supply} supplied / ${f.demand} required (margin ${f.margin})` });
     items.push({ ok: r.under === 0, text: `Coverage: ${SLOTS - r.under}/${SLOTS} slots have >=2 people` });
-    items.push({ ok: r.over === 0, text: `Overstaffing: ${r.over} slot(s) above 3 people` });
+    items.push({ ok: true, text: `Extra coverage: ${r.over} slot(s) have more than 3 people on duty (fine — no maximum is enforced)` });
     items.push({ ok: r.restViol === 0, text: `Rest periods: ${40 - r.restViol}/40 OK (>=11h)` });
     items.push({ ok: r.unavailViol === 0, text: `Unavailability: ${r.unavailViol} violation(s)` });
 items.push({ ok: true, text: `Shifts: ${state.people.length} people x 5 shifts x 9h` });
@@ -686,7 +693,11 @@ function renderHeatmap() {
     for (let h = 0; h < 24; h++) {
       const c = coverage[day * 24 + h];
       const cell = document.createElement("div");
-      cell.className = "hm-cell " + (c >= 2 && c <= 3 ? "c" + c : "cbad");
+      // c2/c3 keep their own colors; 4+ gets its own distinct "heavy overlap"
+      // color (not the error color - it's not a violation - but visually
+      // different from plain handover coverage so an unusually large cluster
+      // still stands out instead of blending in with normal triple-coverage.
+      cell.className = "hm-cell " + (c < 2 ? "cbad" : (c <= 3 ? "c" + c : "c4plus"));
       cell.textContent = c;
       cell.title = `${DAYS[day]} ${String(h).padStart(2, "0")}:00 — ${c} on duty`;
       el.appendChild(cell);

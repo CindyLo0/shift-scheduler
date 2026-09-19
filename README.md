@@ -18,7 +18,7 @@ Open `index.html` in a browser and it works. All state persists in `localStorage
 
 ### Hard constraints (never silently violated)
 - 8 people, 5 shifts each, 9h each.
-- **≥2 and ≤3 people on duty in every slot** (24/7, no gaps; 3 = handover).
+- **≥2 people on duty in every slot** (24/7, no gaps). There is no hard maximum — 3, 4, or more overlapping is never a hard-constraint failure. (It can still get a small *soft* nudge if it lands away from a shift changeover - see "Handover" under soft constraints.)
 - **≥11h rest** between the end of one shift and the start of the next.
 - ≤5 consecutive working shifts (auto-satisfied by 5 distinct days).
 - Never assign an unavailable day or hour range.
@@ -27,9 +27,10 @@ Open `index.html` in a browser and it works. All state persists in `localStorage
 Per person: preferred start window, earliest/latest acceptable start, preferred days
 off, wants consecutive days off, max overnight shifts, max weekend shifts.
 Team-level: even overnight/weekend distribution, fair rotation of undesirable
-("graveyard") starts across weeks (history persisted), triple-coverage placed at
-shift changeovers (handover), and a **minimax** term so no single person absorbs a
-disproportionate share of unmet preferences.
+("graveyard") starts across weeks (history persisted), extra coverage (any slot
+above the 2-person minimum) placed at shift changeovers (handover), and a
+**minimax** term so no single person absorbs a disproportionate share of unmet
+preferences.
 
 ## How the solver works
 
@@ -83,8 +84,10 @@ constants are easy to change in `app.js`:
 - **Team size:** edit the `demoPeople()` array (add/remove `mkPerson(...)` entries).
   The feasibility check and solver adapt automatically.
 - **Coverage minimum:** change the `2` in `feasibilityCheck()` (`demand = SLOTS * 2`)
-  and the `< 2` / `> 3` checks in `evaluate()`. The heatmap legend and validation
-  text reference these values too.
+  and the `< 2` check in `evaluate()`. The heatmap legend and validation text
+  reference this value too. (There is no coverage maximum in this version — the
+  `> 3` check that used to enforce one was removed; `over` is still tracked and
+  shown, informationally only.)
 - **Shift length / rest:** change `SHIFT_LEN` and `REST_MIN` at the top of `app.js`.
 
 ## Export
