@@ -454,7 +454,9 @@ function randomMove(people) {
   return out;
 }
 
-function solve() {
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function solve() {
   const weights = state.weights;
   const zeroWeights = Object.fromEntries(Object.keys(weights).map(k => [k, 0]));
 
@@ -467,8 +469,10 @@ function solve() {
     let curScore = evaluate(cur, zeroWeights).total;
     let lb = clonePeople(cur), lbs = curScore;
     let T = 100;
+    let iter = 0;
     const start = Date.now();
     while (Date.now() - start < 1500) {
+      if (++iter % 100 === 0) await sleep(1);
       const next = proposeMove(cur);
       const ns = evaluate(next, zeroWeights).total;
       const d = ns - curScore;
@@ -491,8 +495,10 @@ function solve() {
     let curScore = evaluate(cur, zeroWeights).total;
     let lb = clonePeople(cur), lbs = curScore;
     let T = 100;
+    let iter = 0;
     const start = Date.now();
     while (Date.now() - start < 1500) {
+      if (++iter % 100 === 0) await sleep(1);
       const next = proposeMove(cur);
       const ns = evaluate(next, zeroWeights).total;
       const d = ns - curScore;
@@ -509,8 +515,10 @@ function solve() {
   let best = clonePeople(startFrom), bestScore = evaluate(best, weights).total;
   let cur = clonePeople(startFrom), curScore = bestScore;
   let T = 40;
+  let iter = 0;
   const start = Date.now();
   while (Date.now() - start < 1800) {
+    if (++iter % 100 === 0) await sleep(1);
     const next = proposeMove(cur);
     const ns = evaluate(next, weights).total;
     const nh = evaluate(next, zeroWeights).hard;
@@ -1337,7 +1345,7 @@ function exportCSV() {
 // ---------------------------------------------------------------------------
 function init() {
   load();
-  document.getElementById("solveBtn").addEventListener("click", solve);
+  document.getElementById("solveBtn").addEventListener("click", onSolveClick);
   document.getElementById("exportBtn").addEventListener("click", exportCSV);
   document.getElementById("resetBtn").addEventListener("click", resetToDemo);
   document.getElementById("variationToggle").addEventListener("change", e => {
@@ -1346,6 +1354,20 @@ function init() {
     renderAll();
   });
   renderAll();
+}
+
+async function onSolveClick() {
+  const btn = document.getElementById("solveBtn");
+  btn.disabled = true;
+  btn.classList.add("spinner");
+  btn.textContent = "";
+  try {
+    await solve();
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove("spinner");
+    btn.textContent = "Solve";
+  }
 }
 
 document.addEventListener("DOMContentLoaded", init);
